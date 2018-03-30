@@ -323,8 +323,7 @@ int main() {
 			for (int i=0;i<prev_path_size;i++)	{ // add left over points from previous path that were not executed
 				
 				next_x_vals.push_back(previous_path_x[i]);
-				next_y_vals.push_back(previous_path_y[i]);
-			
+				next_y_vals.push_back(previous_path_y[i]);			
 			}
 			
 			// STEP4: Control vehicle speed by giving target location for vehicle
