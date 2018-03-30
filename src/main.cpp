@@ -260,7 +260,7 @@ int main() {
 			if (prev_path_size<2)	{
 			
 				double prev_car_x=car_x-cos(car_yaw);
-				double prev_car_y=car_y-sin(yaw);
+				double prev_car_y=car_y-sin(car_yaw);
 				
 				ptsx.push_back(prev_car_x);
 				ptsx.push_back(car_x);
@@ -277,7 +277,7 @@ int main() {
 				double prev_ref_car_x=previous_path_x[prev_path_size-2];
 				double prev_ref_car_y=previous_path_y[prev_path_size-2];
 				
-				ref_car_yaw=atan2(ref_car_y-prev_ref_car_y,ref_car_x,prev_ref_car_x);
+				ref_car_yaw=atan2(ref_car_y-prev_ref_car_y,ref_car_x-prev_ref_car_x);
 			
 				ptsx.push_back(prev_ref_car_x);
 				ptsx.push_back(ref_car_x);
