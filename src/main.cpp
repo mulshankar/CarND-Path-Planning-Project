@@ -239,13 +239,10 @@ int main() {
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
           	json msgJson;
-
-          	vector<double> next_x_vals;
-          	vector<double> next_y_vals;
-			
-			  int lane=1;
-			  double ref_vel=49.5; //mph
-              ref_vel=ref_vel*0.44704; //mph to mps
+          	
+			int lane=1;
+			double ref_vel=49.5; //mph
+			ref_vel=ref_vel*0.44704; //mph to mps
 
 
           	// The iteration runs every 20 milliseconds
