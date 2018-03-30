@@ -199,9 +199,6 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
   
-  int lane=1;
-  double ref_vel=49.5; //mph
-  ref_vel=ref_vel*0.44704; //mph to mps
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -245,6 +242,10 @@ int main() {
 
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
+			
+			  int lane=1;
+			  double ref_vel=49.5; //mph
+              ref_vel=ref_vel*0.44704; //mph to mps
 
 
           	// The iteration runs every 20 milliseconds
@@ -304,11 +305,11 @@ int main() {
 			
 			for (int i=0;i<ptsx.size();i++)	{
 				
-				double shift_x=ptsx[i]-ref_x;
-				double shift_y=ptsy[i]-ref_y;
+				double shift_x=ptsx[i]-ref_car_x;
+				double shift_y=ptsy[i]-ref_car_y;
 				
-				ptsx[i]=shift_x*cos(0-ref_yaw)-shift_y*sin(0-ref_yaw);
-				ptsy[i]=shift_x*sin(0-ref_yaw)+shift_y*cos(0-ref_yaw);	
+				ptsx[i]=shift_x*cos(0-ref_car_yaw)-shift_y*sin(0-ref_car_yaw);
+				ptsy[i]=shift_x*sin(0-ref_car_yaw)+shift_y*cos(0-ref_car_yaw);	
 			
 			}
 			
@@ -348,11 +349,11 @@ int main() {
 				double x_ref=x_point;
 				double y_ref=y_point;
 				
-				x_point=x_ref*cos(ref_yaw)-y_ref*sin(ref_yaw);
-				y_point=x_ref*sin(ref_yaw)+y_ref*cos(ref_yaw);
+				x_point=x_ref*cos(ref_car_yaw)-y_ref*sin(ref_car_yaw);
+				y_point=x_ref*sin(ref_car_yaw)+y_ref*cos(ref_car_yaw);
 				
-				x_point=x_point+ref_x;
-				y_point=y_point+ref_y;
+				x_point=x_point+ref_car_x;
+				y_point=y_point+ref_car_y;
 				
 				next_x_vals.push_back(x_point);
 				next_y_vals.push_back(y_point);
