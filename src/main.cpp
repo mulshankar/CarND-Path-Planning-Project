@@ -199,6 +199,8 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
   
+  double ref_vel=0;
+  
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -239,11 +241,53 @@ int main() {
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
           	json msgJson;
+			
+			int prev_path_size=previous_path_x.size();
+			int lane=1; // start in middle lane		
           	
-			int lane=1;
-			double ref_vel=49.5; //mph
-			ref_vel=ref_vel*0.44704; //mph to mps
-
+			
+			double ref_vel_max=49.5; //mph
+			ref_vel_max=ref_vel_max*0.44704; //mph to mps
+			
+			
+			// Locate our car on the road
+			
+			if (prev_path_size>1)	{			
+				double car_s=end_path_s;			
+			}
+			
+			//set a boolean too close flag to be false initially
+			bool too_close=false;
+			
+			// Check location of other cars on the road, especially ones in our lane
+			
+			for (int i=0;i<sensor_fusion.size();i++)	{
+				
+				double other_car_d=sensor_fusion[i][6];
+				
+				if (other_car_d<=4+(4*lane) && other_car_d>=(4*lane))	{ // assuming our car is in center of lane, check + - 2 m in given lane
+					
+					double other_car_vx=sensor_fusion[i][3];
+					double other_car_vy=sensor_fusion[i][4];
+					double other_car_speed=sqrt(vx*vx+vy*vy);
+					
+					double other_car_s=sensor_fusion[i][5];
+					
+					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
+					
+					if (other_car_s > car_s) && (other_car_s-car_s<30)	{					
+						too_close=true;
+					}					
+				}			
+			}
+			
+			if (too_close==false) && (ref_vel<ref_vel_max) {				
+				ref_vel=ref_vel+ref_vel_max/15;
+			}
+			else if (too_close==true) {
+				ref_vel=ref_vel-+ref_vel_max/15;			
+			}
+			
 
           	// The iteration runs every 20 milliseconds
 			// STEP1: Generate a set of anchor points
@@ -255,7 +299,7 @@ int main() {
 			double ref_car_y=car_y;
 			double ref_car_yaw=deg2rad(car_yaw);
 			
-			int prev_path_size=previous_path_x.size();
+			
 			
 			if (prev_path_size<2)	{
 			
