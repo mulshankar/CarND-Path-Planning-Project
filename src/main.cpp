@@ -283,7 +283,7 @@ int main() {
 			}
 			
 			if (too_close==true) {
-				ref_vel=ref_vel-ref_vel_max/20;			
+				ref_vel=ref_vel-ref_vel_max/50;			
 			}
 			else if (ref_vel<(ref_vel_max-(1.1*ref_vel_max/50))) {				
 				ref_vel=ref_vel+ref_vel_max/50;
