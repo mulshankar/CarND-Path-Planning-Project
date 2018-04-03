@@ -283,10 +283,10 @@ int main() {
 			}
 			
 			if ((too_close==false) && (ref_vel<ref_vel_max)) {				
-				ref_vel=ref_vel+ref_vel_max/15;
+				ref_vel=ref_vel+ref_vel_max/50;
 			}
 			else if (too_close==true) {
-				ref_vel=ref_vel-ref_vel_max/15;			
+				ref_vel=ref_vel-ref_vel_max/20;			
 			}
 			
 
