@@ -201,9 +201,12 @@ int main() {
   }
   
   double ref_vel=0;
+  int lane=1; // start in middle lane			
+  double ref_vel_max=49.5; //mph
+  ref_vel_max=ref_vel_max*0.44704; //mph to mps
   
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel,&lane,&ref_vel_max](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -244,12 +247,6 @@ int main() {
           	json msgJson;
 			
 			int prev_path_size=previous_path_x.size();
-			int lane=1; // start in middle lane		
-          	
-			
-			double ref_vel_max=49.5; //mph
-			ref_vel_max=ref_vel_max*0.44704; //mph to mps
-			
 			
 			// Locate our car on the road
 			
@@ -283,7 +280,8 @@ int main() {
 			}
 			
 			if (too_close==true) {
-				ref_vel=ref_vel-ref_vel_max/50;			
+				ref_vel=ref_vel-ref_vel_max/50;	
+				lane=0;
 			}
 			else if (ref_vel<(ref_vel_max-(1.1*ref_vel_max/50))) {				
 				ref_vel=ref_vel+ref_vel_max/50;
