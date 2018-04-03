@@ -282,11 +282,11 @@ int main() {
 				}			
 			}
 			
-			if ((too_close==false) && (ref_vel<ref_vel_max)) {				
-				ref_vel=ref_vel+ref_vel_max/50;
-			}
-			else if (too_close==true) {
+			if (too_close==true) {
 				ref_vel=ref_vel-ref_vel_max/20;			
+			}
+			else if (ref_vel<(ref_vel_max-(1.1*ref_vel_max/50))) {				
+				ref_vel=ref_vel+ref_vel_max/50;
 			}
 			
 
