@@ -180,6 +180,7 @@ int main() {
   ifstream in_map_(map_file_.c_str(), ifstream::in);
 
   string line;
+  
   while (getline(in_map_, line)) {
   	istringstream iss(line);
   	double x;
@@ -202,7 +203,7 @@ int main() {
   double ref_vel=0;
   
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -269,23 +270,23 @@ int main() {
 					
 					double other_car_vx=sensor_fusion[i][3];
 					double other_car_vy=sensor_fusion[i][4];
-					double other_car_speed=sqrt(vx*vx+vy*vy);
+					double other_car_speed=sqrt(other_car_vx*other_car_vx+other_car_vy*other_car_vy);
 					
 					double other_car_s=sensor_fusion[i][5];
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if (other_car_s > car_s) && (other_car_s-car_s<30)	{					
+					if ((other_car_s > car_s) && (other_car_s-car_s<30)) {					
 						too_close=true;
 					}					
 				}			
 			}
 			
-			if (too_close==false) && (ref_vel<ref_vel_max) {				
+			if ((too_close==false) && (ref_vel<ref_vel_max)) {				
 				ref_vel=ref_vel+ref_vel_max/15;
 			}
 			else if (too_close==true) {
-				ref_vel=ref_vel-+ref_vel_max/15;			
+				ref_vel=ref_vel-ref_vel_max/15;			
 			}
 			
 
