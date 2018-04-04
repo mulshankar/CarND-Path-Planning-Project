@@ -287,7 +287,7 @@ int main() {
 				
 				double other_car_d=sensor_fusion[i][6];
 				
-				lane_to_change=0;
+				int lane_to_change=0;
 				
 				if (other_car_d<=4+(4*lane_to_change) && other_car_d>=(4*lane_to_change))	{ // check for cars in potential lane change
 					
