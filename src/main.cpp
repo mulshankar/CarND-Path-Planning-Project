@@ -281,7 +281,7 @@ int main() {
 			
 			if (too_close==true) {
 			
-				ref_vel=ref_vel-ref_vel_max/50;	// first reduce speed
+				ref_vel=ref_vel-ref_vel_max/40;	// first reduce speed
 				
 				for (int i=0;i<sensor_fusion.size();i++)	{ // check for lane change
 				
@@ -289,7 +289,7 @@ int main() {
 				
 				int lane_to_change=0;
 				
-				if (other_car_d<=4+(4*lane_to_change) && other_car_d>=(4*lane_to_change))	{ // check for cars in potential lane change
+				if (other_car_d<=4+(4*lane_to_change) && other_car_d>=(4*(lane_to_change+1)))	{ // check for cars in potential lane change
 					
 					double other_car_vx=sensor_fusion[i][3];
 					double other_car_vy=sensor_fusion[i][4];
@@ -299,7 +299,7 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((abs(other_car_s-car_s)<60) && (ref_vel>(40*0.44704))) {					
+					if ((abs(other_car_s-car_s)<60) || (ref_vel>(40*0.44704))) {					
 						lane=1;
 					}
 					else {
