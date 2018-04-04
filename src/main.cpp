@@ -299,7 +299,7 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((other_car_s >= car_s) && (abs(other_car_s-car_s)<30) && (ref_vel>(40*0.44704)) {					
+					if ((other_car_s >= car_s) && (abs(other_car_s-car_s)<30) && (ref_vel>(40*0.44704))) {					
 						lane=1;
 					}
 					else {
