@@ -273,7 +273,7 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((other_car_s > car_s) && (other_car_s-car_s<30)) {					
+					if ((other_car_s > car_s) && (other_car_s-car_s<50)) {					
 						too_close=true;
 					}					
 				}			
