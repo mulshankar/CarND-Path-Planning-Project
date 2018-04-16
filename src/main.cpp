@@ -281,6 +281,8 @@ int main() {
 			
 			if (too_close==true) {
 			
+				std::cout << "Too Close !! " << std::endl;
+			
 				ref_vel=ref_vel-ref_vel_max/40;	// first reduce speed
 				
 				for (int i=0;i<sensor_fusion.size();i++)	{ // check for lane change
@@ -299,8 +301,10 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
+					std::cout << "distance in lane: " << abs(other_car_s-car_s) << std::endl;
+					
 					if ((abs(other_car_s-car_s)<40)) { //|| (ref_vel>(40*0.44704))					
-						lane=1;
+						lane=1;						
 					}
 					else {
 						lane=0;
