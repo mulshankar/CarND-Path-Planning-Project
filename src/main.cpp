@@ -205,9 +205,10 @@ int main() {
   double ref_vel_max=49.5; //mph
   ref_vel_max=ref_vel_max*0.44704; //mph to mps
   double max_accel=0.2;
+  int lane_to_change=0;//lane chane to left
   
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel,&lane,&ref_vel_max,&max_accel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel,&lane,&ref_vel_max,&max_accel,&lane_to_change](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -292,8 +293,6 @@ int main() {
 					
 					double other_car_d=sensor_fusion[i][6];
 				
-					int lane_to_change=0;
-				
 					if (other_car_d<=4+(4*lane_to_change) && other_car_d>=(4*lane_to_change))	{ // check for cars in potential lane change
 						
 						double other_car_vx=sensor_fusion[i][3];
@@ -315,7 +314,7 @@ int main() {
 					}			
 				}				
 			}
-			else if (ref_vel<ref_vel_max) {				
+			else if ((car_ahead==false)&&(ref_vel<ref_vel_max-0.2)) {				
 				ref_vel=ref_vel+max_accel;
 			}
 			
