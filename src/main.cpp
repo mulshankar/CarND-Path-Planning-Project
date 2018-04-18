@@ -265,7 +265,7 @@ int main() {
 			
 			for (int i=0;i<sensor_fusion.size();i++)	{
 				
-				double other_car_d=sensor_fusion[i][6];
+				double other_car_d=sensor_fusion[i][6]; // get the 'd' coordinate of the car
 				
 				if (other_car_d<=4+(4*lane) && other_car_d>=(4*lane))	{ // assuming our car is in center of lane, check + - 2 m in given lane
 					
@@ -277,7 +277,7 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((other_car_s > car_s) && (other_car_s-car_s<30)) {					
+					if ((other_car_s > car_s) && (other_car_s-car_s<50)) {					
 						car_ahead=true;
 					}					
 				}			
@@ -285,15 +285,16 @@ int main() {
 			
 			if (car_ahead==true) {
 			
-				std::cout << "Too Close !! " << std::endl;
+				cout << "Car Ahead in lane!! " << endl;
 			
-				ref_vel=ref_vel-(2*max_accel);	// first reduce speed
+				ref_vel=ref_vel-(5*max_accel);	// first reduce speed
+				ref_vel=max(30*0.44704,ref_vel); // maintain at least 30 mph
 				
 				for (int i=0;i<sensor_fusion.size();i++) { // check for lane change
 					
-					double other_car_d=sensor_fusion[i][6];
-				
-					if (other_car_d<=4+(4*lane_to_change) && other_car_d>=(4*lane_to_change))	{ // check for cars in potential lane change
+					double other_car_d=sensor_fusion[i][6];					
+					
+					if (other_car_d>0 && other_car_d<=4) { // just a simple check that says 'yes - ther			
 						
 						double other_car_vx=sensor_fusion[i][3];
 						double other_car_vy=sensor_fusion[i][4];
@@ -303,15 +304,31 @@ int main() {
 						
 						other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 						
-						if ((abs(other_car_s-car_s)<20)) { //|| (ref_vel>(40*0.44704))					
-							lane=1;	
-							std::cout << "distance in lane: " << abs(other_car_s-car_s) << std::endl;							
+						if ((abs(other_car_s-car_s)<30)) { 						
+							car_left=true;
+							cout << "Car too close in left lane !! " << endl;							
 						}
-						else {
-							lane=0;
-						}
+					}
+					
+					if (other_car_d>8 && other_car_d<=12) { // just a simple check that says 'yes - ther			
 						
-					}			
+						double other_car_vx=sensor_fusion[i][3];
+						double other_car_vy=sensor_fusion[i][4];
+						double other_car_speed=sqrt(other_car_vx*other_car_vx+other_car_vy*other_car_vy);
+						
+						double other_car_s=sensor_fusion[i][5];
+						
+						other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
+						
+						if ((abs(other_car_s-car_s)<30)) { 						
+							car_right=true;	
+							cout << "Car too close in right lane !! " << endl;
+						}
+					}
+				}
+				
+				if (car_left==false) {
+					lane=0;				
 				}				
 			}
 			else if ((car_ahead==false)&&(ref_vel<ref_vel_max-0.2)) {				
