@@ -205,7 +205,7 @@ int main() {
   double ref_vel_max=49.5; //mph
   ref_vel_max=ref_vel_max*0.44704; //mph to mps
   double max_accel=0.2;
-  int lane_to_change=0;//lane chane to left
+  int lane_to_change=0;//initial lane chane to left
   
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel,&lane,&ref_vel_max,&max_accel,&lane_to_change](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -256,10 +256,9 @@ int main() {
 				double car_s=end_path_s;			
 			}
 			
-			//set a boolean 'too_close' flag to be false initially
-			bool car_ahead=false;
-			bool car_left=false;
-			bool car_right=false;
+			bool car_ahead=false; //set a boolean 'too_close' flag to be false initially
+			bool lane_change_OK=true; // assuming by default a lane change is OK unless told otherwise
+			
 			
 			// Check location of other cars on the road, especially ones in our lane
 			
@@ -283,18 +282,36 @@ int main() {
 				}			
 			}
 			
+			// decide on which lane you want to shift
+			switch (lane) {			
+				case 0:
+					lane_to_change=1;
+					break;
+				case 1:
+					lane_to_change=0;
+					break;
+				case 2:
+					lane_to_change=1;
+					break;
+				default:
+					cout<<"problem in lane variable"<<endl;			
+			}
+			
+			
+			
 			if (car_ahead==true) {
 			
 				cout << "Car Ahead in lane!! " << endl;
+				cout << "Possible Lane Change is " << lane_to_change<<endl;
 			
-				ref_vel=ref_vel-(5*max_accel);	// first reduce speed
+				ref_vel=ref_vel-(1.0*max_accel);	// first reduce speed
 				ref_vel=max(30*0.44704,ref_vel); // maintain at least 30 mph
 				
 				for (int i=0;i<sensor_fusion.size();i++) { // check for lane change
 					
 					double other_car_d=sensor_fusion[i][6];					
 					
-					if (other_car_d>0 && other_car_d<=4) { // just a simple check that says 'yes - ther			
+					if (other_car_d<=4+(4*lane_to_change) && other_car_d>=(4*lane_to_change)) { // just a simple check that says 'yes - ther			
 						
 						double other_car_vx=sensor_fusion[i][3];
 						double other_car_vy=sensor_fusion[i][4];
@@ -304,13 +321,13 @@ int main() {
 						
 						other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 						
-						if ((abs(other_car_s-car_s)<30)) { 						
-							car_left=true;
-							cout << "Car too close in left lane !! " << endl;							
+						if ((abs(other_car_s-car_s)<20)) { 						
+							lane_change_OK=false;
+							cout << "Car too close in desired lane change !! " << endl;							
 						}
 					}
 					
-					if (other_car_d>8 && other_car_d<=12) { // just a simple check that says 'yes - ther			
+					/*if (other_car_d>8 && other_car_d<=12) { // just a simple check that says 'yes - ther			
 						
 						double other_car_vx=sensor_fusion[i][3];
 						double other_car_vy=sensor_fusion[i][4];
@@ -324,12 +341,12 @@ int main() {
 							car_right=true;	
 							cout << "Car too close in right lane !! " << endl;
 						}
-					}
+					}*/
 				}
 				
-				if (car_left==false) {
-					lane=0;				
-				}				
+				if (lane_change_OK==true) {
+					lane=lane_to_change;				
+				}
 			}
 			else if ((car_ahead==false)&&(ref_vel<ref_vel_max-0.2)) {				
 				ref_vel=ref_vel+max_accel;
