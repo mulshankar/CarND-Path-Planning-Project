@@ -204,9 +204,10 @@ int main() {
   int lane=1; // start in middle lane			
   double ref_vel_max=49.5; //mph
   ref_vel_max=ref_vel_max*0.44704; //mph to mps
+  double max_accel=0.2;
   
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel,&lane,&ref_vel_max](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ref_vel,&lane,&ref_vel_max,&max_accel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -250,12 +251,14 @@ int main() {
 			
 			// Locate our car on the road
 			
-			if (prev_path_size>1)	{			
+			if (prev_path_size>0)	{			
 				double car_s=end_path_s;			
 			}
 			
-			//set a boolean too close flag to be false initially
-			bool too_close=false;
+			//set a boolean 'too_close' flag to be false initially
+			bool car_ahead=false;
+			bool car_left=false;
+			bool car_right=false;
 			
 			// Check location of other cars on the road, especially ones in our lane
 			
@@ -273,17 +276,17 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((other_car_s > car_s) && (other_car_s-car_s<50)) {					
-						too_close=true;
+					if ((other_car_s > car_s) && (other_car_s-car_s<30)) {					
+						car_ahead=true;
 					}					
 				}			
 			}
 			
-			if (too_close==true) {
+			if (car_ahead==true) {
 			
 				std::cout << "Too Close !! " << std::endl;
 			
-				ref_vel=ref_vel-ref_vel_max/40;	// first reduce speed
+				ref_vel=ref_vel-max_accel;	// first reduce speed
 				
 				lane=0;
 				
@@ -303,15 +306,15 @@ int main() {
 						
 						other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 						
-						if ((abs(other_car_s-car_s)<40)) { //|| (ref_vel>(40*0.44704))					
+						if ((abs(other_car_s-car_s)<30)) { //|| (ref_vel>(40*0.44704))					
 							lane=1;	
 							std::cout << "distance in lane: " << abs(other_car_s-car_s) << std::endl;							
 						}
 					}			
 				}				
 			}
-			else if (ref_vel<(ref_vel_max-(1.1*ref_vel_max/50))) {				
-				ref_vel=ref_vel+ref_vel_max/50;
+			else if (ref_vel<ref_vel_max) {				
+				ref_vel=ref_vel+max_accel;
 			}
 			
 
