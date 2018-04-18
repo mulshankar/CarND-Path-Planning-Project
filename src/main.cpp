@@ -256,7 +256,7 @@ int main() {
 				double car_s=end_path_s;			
 			}
 			
-			bool car_ahead=false; //set a boolean 'too_close' flag to be false initially
+			bool car_ahead=false; //set a boolean 'car ahead' flag to be false initially
 			bool lane_change_OK=true; // assuming by default a lane change is OK unless told otherwise
 			
 			
@@ -276,7 +276,7 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((other_car_s > car_s) && (other_car_s-car_s<50)) {					
+					if ((other_car_s > car_s) && (other_car_s-car_s<40)) {					
 						car_ahead=true;
 					}					
 				}			
@@ -303,10 +303,10 @@ int main() {
 			
 				cout << "Car Ahead in lane!! " << endl;
 				cout << "Possible Lane Change is " << lane_to_change<<endl;
-			
-				ref_vel=ref_vel-(1.0*max_accel);	// first reduce speed
-				ref_vel=max(30*0.44704,ref_vel); // maintain at least 30 mph
 				
+				ref_vel=ref_vel-(2.0*max_accel);	// first reduce speed
+				ref_vel=max(5*0.44704,ref_vel); // maintain at least 5 mph
+			
 				for (int i=0;i<sensor_fusion.size();i++) { // check for lane change
 					
 					double other_car_d=sensor_fusion[i][6];					
@@ -344,8 +344,10 @@ int main() {
 					}*/
 				}
 				
-				if (lane_change_OK==true) {
-					lane=lane_to_change;				
+				if (lane_change_OK==true && car_speed<35) {
+					lane=lane_to_change;
+					cout<<"Changing lane to lane "<<lane<<endl;					
+					cout<<"Velocity Condition satisfied for lane change "<<car_speed<<endl;					
 				}
 			}
 			else if ((car_ahead==false)&&(ref_vel<ref_vel_max-0.2)) {				
