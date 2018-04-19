@@ -276,7 +276,7 @@ int main() {
 					
 					other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
 					
-					if ((other_car_s > car_s) && (other_car_s-car_s<40)) {					
+					if ((other_car_s > car_s) && (other_car_s-car_s<30)) {					
 						car_ahead=true;
 					}					
 				}			
@@ -295,17 +295,15 @@ int main() {
 					break;
 				default:
 					cout<<"problem in lane variable"<<endl;			
-			}
-			
-			
+			}			
 			
 			if (car_ahead==true) {
 			
 				cout << "Car Ahead in lane!! " << endl;
 				cout << "Possible Lane Change is " << lane_to_change<<endl;
 				
-				ref_vel=ref_vel-(2.0*max_accel);	// first reduce speed
-				ref_vel=max(5*0.44704,ref_vel); // maintain at least 5 mph
+				ref_vel=ref_vel-(6.0*max_accel);	// first reduce speed
+				ref_vel=max(20*0.44704,ref_vel); // maintain at least 20 mph
 			
 				for (int i=0;i<sensor_fusion.size();i++) { // check for lane change
 					
@@ -326,25 +324,9 @@ int main() {
 							cout << "Car too close in desired lane change !! " << endl;							
 						}
 					}
-					
-					/*if (other_car_d>8 && other_car_d<=12) { // just a simple check that says 'yes - ther			
-						
-						double other_car_vx=sensor_fusion[i][3];
-						double other_car_vy=sensor_fusion[i][4];
-						double other_car_speed=sqrt(other_car_vx*other_car_vx+other_car_vy*other_car_vy);
-						
-						double other_car_s=sensor_fusion[i][5];
-						
-						other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
-						
-						if ((abs(other_car_s-car_s)<30)) { 						
-							car_right=true;	
-							cout << "Car too close in right lane !! " << endl;
-						}
-					}*/
 				}
 				
-				if (lane_change_OK==true && car_speed<35) {
+				if (lane_change_OK==true && car_speed<35 && car_speed>=30) {
 					lane=lane_to_change;
 					cout<<"Changing lane to lane "<<lane<<endl;					
 					cout<<"Velocity Condition satisfied for lane change "<<car_speed<<endl;					
