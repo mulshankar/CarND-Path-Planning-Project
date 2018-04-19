@@ -8,70 +8,76 @@ Self-Driving Car Engineer Nanodegree Program
 Implement a path planning algorithm to enable a self driving car to navigate around a track provided by the Udacity simulator and safely perform lane changes.
 
 [//]: # (Image References)
-[image1]: ./Images/StateDefine.PNG
-[image2]: ./Images/Errors.PNG
-[image3]: ./Images/StateEqns.PNG
+[image1]: ./Images/BehaviorPlannerOverview.png
+[image2]: ./Images/TrackOverview.PNG
+[image3]: ./Images/FrenetLaneChange.png
 [image4]: ./Images/Weights.PNG
 [image5]: ./Images/MeasurementPrediction.PNG
 [image6]: ./Images/UKFupdate1.PNG
 [image7]: ./Images/NIS.PNG
 [image8]: ./Images/ChiSquare.PNG
 
-## Behavior Planner Overview
+## Trajectory Generation Overview
 
-The overall control architecture of a self-driving car is shown below. The key 4 elements - Perception, Localization, Control and Path-Planning. Individual modules of the behavior planner are highlighted within the blue box. The localization and prediction modules feed into the behavior planner module which sends its information to the Trajectory planning module. The focus of this project is on planning a trajectory for the car to traverse that is ideal in terms of speed, acceleration and jerk. 
+The overall control architecture of a self-driving car is shown below. The key 4 elements - Perception, Localization, Control and Path-Planning. Individual modules of the behavior planner are highlighted within the blue box along with information flow. The focus of this project is on planning a trajectory for the car to traverse that is ideal in terms of speed, acceleration and jerk. The trajectory planner takes information from the localization module, prediction module and behavior planner modules. 
 
 ![alt text][image1]
 
-The cross track error and orientation error can be represented as shown below. The dashed white line indicates cross track error. 
+## Test Track
+
+The simulator track is 6945.554 meters around (about 4.32 miles). If the car averages near 50 MPH, then it should take a little more than 5 minutes for it to go all the way around the highway. The highway has 6 lanes total - 3 heading in each direction. Each lane is 4 m wide and the car should only ever be in one of the 3 lanes on the right-hand side. The car should always be inside a lane unless doing a lane change. 
 
 ![alt text][image2]
 
-There are typically 3 control inputs in a vehicle - throttle, brake and steer. Throttle and brake can be combined into a single input with bounds [-1,1]. A negative value implies braking. Therefore, the system has 2 control inputs [steer, throttle].
+## Algorithm Overview
 
-The state equations are given below:
+Before diving into the algorithm, it is important to introduce the concept of Frenet coordinates - s and d. Frenet coordinates simplify the car position from cartesian (x,y) coordinates to road coordinates. The 's' value is the distance along the direction of the road. The first waypoint has an s value of 0 because it is the starting point. The d vector has a magnitude of 1 and points perpendicular to the road in the direction of the right-hand side of the road. The d vector can be used to calculate lane positions. Frenet coordinates along with time can accurately capture the desired safe trajectory for the vehicle to navigate. 
 
 ![alt text][image3]
 
-## Algorithm Overview
+While frenet coordinates are good for trajectory planning, the localization module still is in the global X,Y coordinates. Therefore, once the trajectory is planned in the frenet coordinate system, it is converted into XY coordinate system for the car's motion control module. The algorithm can be sub-sectioned into 2 parts - (1) First part decides on lane (2) Second part plans the trajectory for the desired lane
 
-There are four pieces to a self driving car - Perception, Localization, Path Planning and Control. The focus of this project is on control. It is assumed that the path planning algorithm would yield a desired set of way-points for the car to traverse. The MPC algorithm would project the vehicle's state in the future and minimize the error between the vehicle's trajectory and desired path. 
+* The car initially starts in lane 1 ( 0- left, 1 -middle and 2-right lanes)
 
-The desired way-points from the path planning algorithm are in the global map co-ordinates. In order to calculate the cross track error as well as the orientation error, it is convenient to convert these way points to the car's co-ordinate system. The code below performs this transformation. 
+* The localization module reports the car's current x,y,s,d,yaw and speed information. 
+
+* The first check is performed using information provided by the sensor fusion module. Information about cars in the current lane of travel is processed. A threshold of 30 m was set to identify if the test vehicle is too close to a vehicle right in front of it. 
 
 ```
-for (int i=0;i<ptsx.size();i++) { // Transform way points from map coordinate to car coordinate system
-			
-	double shift_x = ptsx[i]-px; // translation move brings the point to car co-ordinates origin
-	double shift_y = ptsy[i]-py;
+for (int i=0;i<sensor_fusion.size();i++)	
+{
+	double other_car_d=sensor_fusion[i][6]; // get the 'd' coordinate of the car
 
-	ptsx[i] = (shift_x*cos(0-psi) - shift_y*sin(0-psi)); // rotational move
-	ptsy[i] = (shift_x*sin(0-psi) + shift_y*cos(0-psi));  		  
+	if (other_car_d<=4+(4*lane) && other_car_d>=(4*lane))	{ // assuming our car is in center of lane, check + - 2 m in given lane
+		
+		double other_car_vx=sensor_fusion[i][3];
+		double other_car_vy=sensor_fusion[i][4];
+		double other_car_speed=sqrt(other_car_vx*other_car_vx+other_car_vy*other_car_vy);
+		
+		double other_car_s=sensor_fusion[i][5];
+		
+		other_car_s=other_car_s+ prev_path_size*0.02*other_car_speed; // predict where the car will be at the end of its current planned path
+		
+		if ((other_car_s > car_s) && (other_car_s-car_s<30)) {					
+			car_ahead=true;
+		}					
+	}			
 }
 
 ```
-Once the way points are converted to the car's co-ordinate system, a 3rd order polynomial is fit to generalize the way-points. This polynomial would form the desired/reference trajectory that the MPC algorithm wants the car to follow. 
+* A simple switch case block decides on available options for lane changes
 
-The car's current states are received from the simulator. The car's current states along with the polynomial coefficients are passed to the MPC algorithm. The MPC algorithm projects the car's states into the future and calculates the desired steer and throttle actuation that minimizes the cross track and orientation errors. 
+* If there is car ahead in the lane that is too close, the first step is to reduce speed and then explore if a lane change maneuver is safe to perform. The check uses sensor fusion information of cars in the "desired" lane. A velocity constraint was also added to minimize jerk or acceleration. For example, the car should not perform lane change at 50 mph. 
 
-The received commands from the MPC algorithm were fed into the simulator and verified to ensure the car runs smooth without veering off the desired path or outside the curb. 
+* Once the lane is decided, the next step is to generate a safe trajectory for the car to traverse. While the trajectory is planned for a distance of 90 m, the base loop runs at 20 ms. The car probably travels for about the first few meters. The remaining points from the previous planned path is retained. 
 
-## MPC Algorithm
+* A set of anchor points or way-points are generated at wide-spaced intervals (30 m in our case) in the frenet coordinate system. A helper functio getXY converts these way-points into the cartesian coordinate X,Y system
 
-The first step of the MPC algorithm was to define the horizon and time step over which the algorithm optimizes the error. 
+* These new way-points are now appended to the untraversed points of the previous planned trajectory. This ensures a smooth continuous path. 
 
-* The problem is solved in a receding horizon fashion. While the look ahead info helps in optimizing the actuator commands, too long of a horizon is not useful either. In real world, there is a fair bit of uncertainty in what comes ahead. The calculated actuations are applied for the current time step and the optimization is repeated from the new time step to the end of the horizon. 
+* The spline library was used to fit a polynomial through these points. Spline ensures the generated polynomial goes through every single way-point.
 
-* The MPC algorithm essentially breaks down a continuous time problem into the N discrete steps and converts it into an optimization problem. N is given as time horizon (H) divided by time step (dt). The total states that the algorithm optimizes is number of states (6) * N + actuations at each time step. The longer the horizon, higher is the computational effort. 
-
-Taking into account the above two constraints, a prediction horizon of 1 second with a time step dt of 0.1 second worked well for the problem. 
-
-```
-size_t N = 10;
-double dt = 0.1;
-
-```
-The next step applies the constraints for the states and acutations. The differential equations described above provide the state constraints. The steer was limited to an absolute value of 25 degrees and the pedal was constrained between +1 and -1.
+* A simple calculation is then done based on current velocity, loop time and distance to compute the desired x,y coordinates.
 
 ```
 // The upper and lower limits of delta are set to -25 and 25

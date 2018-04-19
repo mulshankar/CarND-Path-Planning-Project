@@ -204,7 +204,7 @@ int main() {
   int lane=1; // start in middle lane			
   double ref_vel_max=49.5; //mph
   ref_vel_max=ref_vel_max*0.44704; //mph to mps
-  double max_accel=0.2;
+  double max_accel=0.2; // m/s2
   int lane_to_change=0;//initial lane chane to left
   
 
@@ -303,7 +303,7 @@ int main() {
 				cout << "Possible Lane Change is " << lane_to_change<<endl;
 				
 				ref_vel=ref_vel-(6.0*max_accel);	// first reduce speed
-				ref_vel=max(20*0.44704,ref_vel); // maintain at least 20 mph
+				ref_vel=max(20*0.44704,ref_vel); // maintain at least 20 mph. If car comes to a full stop, simulator behaves weird
 			
 				for (int i=0;i<sensor_fusion.size();i++) { // check for lane change
 					
@@ -332,7 +332,7 @@ int main() {
 					cout<<"Velocity Condition satisfied for lane change "<<car_speed<<endl;					
 				}
 			}
-			else if ((car_ahead==false)&&(ref_vel<ref_vel_max-0.2)) {				
+			else if ((car_ahead==false)&&(ref_vel<ref_vel_max-0.2)) {		
 				ref_vel=ref_vel+max_accel;
 			}
 			
@@ -345,9 +345,7 @@ int main() {
 			
 			double ref_car_x=car_x;
 			double ref_car_y=car_y;
-			double ref_car_yaw=deg2rad(car_yaw);
-			
-			
+			double ref_car_yaw=deg2rad(car_yaw);			
 			
 			if (prev_path_size<2)	{
 			
@@ -379,9 +377,9 @@ int main() {
 			}
 			
 			
-			vector<double> next_wp0=getXY(car_s+40,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
-			vector<double> next_wp1=getXY(car_s+80,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
-			vector<double> next_wp2=getXY(car_s+120,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
+			vector<double> next_wp0=getXY(car_s+30,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
+			vector<double> next_wp1=getXY(car_s+60,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
+			vector<double> next_wp2=getXY(car_s+90,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
 			
 			
 			ptsx.push_back(next_wp0[0]);
@@ -446,9 +444,7 @@ int main() {
 				next_x_vals.push_back(x_point);
 				next_y_vals.push_back(y_point);
 			
-			}
-			
-			
+			}			
 			
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
@@ -456,10 +452,10 @@ int main() {
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
           	//this_thread::sleep_for(chrono::milliseconds(1000));
-          	ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-          
+          	ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);          
         }
-      } else {
+      }
+	  else {
         // Manual driving
         std::string msg = "42[\"manual\",{}]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
