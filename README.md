@@ -1,140 +1,164 @@
-# CarND-Path-Planning-Project
+# CarND-Path Planning Project
 Self-Driving Car Engineer Nanodegree Program
-   
-### Simulator.
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).
-
-### Goals
-In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
-
-#### The map of the highway is in data/highway_map.txt
-Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
-
-The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
-
-## Basic Build Instructions
-
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./path_planning`.
-
-Here is the data provided from the Simulator to the C++ Program
-
-#### Main car's localization Data (No Noise)
-
-["x"] The car's x position in map coordinates
-
-["y"] The car's y position in map coordinates
-
-["s"] The car's s position in frenet coordinates
-
-["d"] The car's d position in frenet coordinates
-
-["yaw"] The car's yaw angle in the map
-
-["speed"] The car's speed in MPH
-
-#### Previous path data given to the Planner
-
-//Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
-
-["previous_path_x"] The previous list of x points previously given to the simulator
-
-["previous_path_y"] The previous list of y points previously given to the simulator
-
-#### Previous path's end s and d values 
-
-["end_path_s"] The previous list's last point's frenet s value
-
-["end_path_d"] The previous list's last point's frenet d value
-
-#### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
-
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
-
-## Details
-
-1. The car uses a perfect controller and will visit every (x,y) point it recieves in the list every .02 seconds. The units for the (x,y) points are in meters and the spacing of the points determines the speed of the car. The vector going from a point to the next point in the list dictates the angle of the car. Acceleration both in the tangential and normal directions is measured along with the jerk, the rate of change of total Acceleration. The (x,y) point paths that the planner recieves should not have a total acceleration that goes over 10 m/s^2, also the jerk should not go over 50 m/s^3. (NOTE: As this is BETA, these requirements might change. Also currently jerk is over a .02 second interval, it would probably be better to average total acceleration over 1 second and measure jerk from that.
-
-2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
-
-## Tips
-
-A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
 
 ---
 
-## Dependencies
+## Project Objectives
 
-* cmake >= 3.5
-  * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `install-mac.sh` or `install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
+Implement a path planning algorithm to enable a self driving car to navigate around a track provided by the Udacity simulator and safely perform lane changes.
 
-## Editor Settings
+[//]: # (Image References)
+[image1]: ./Images/StateDefine.PNG
+[image2]: ./Images/Errors.PNG
+[image3]: ./Images/StateEqns.PNG
+[image4]: ./Images/Weights.PNG
+[image5]: ./Images/MeasurementPrediction.PNG
+[image6]: ./Images/UKFupdate1.PNG
+[image7]: ./Images/NIS.PNG
+[image8]: ./Images/ChiSquare.PNG
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+## Behavior Planner Overview
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+The overall control architecture of a self-driving car is shown below. The key 4 elements - Perception, Localization, Control and Path-Planning. Individual modules of the behavior planner are highlighted within the blue box. The localization and prediction modules feed into the behavior planner module which sends its information to the Trajectory planning module. The focus of this project is on planning a trajectory for the car to traverse that is ideal in terms of speed, acceleration and jerk. 
 
-## Code Style
+![alt text][image1]
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+The cross track error and orientation error can be represented as shown below. The dashed white line indicates cross track error. 
 
-## Project Instructions and Rubric
+![alt text][image2]
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+There are typically 3 control inputs in a vehicle - throttle, brake and steer. Throttle and brake can be combined into a single input with bounds [-1,1]. A negative value implies braking. Therefore, the system has 2 control inputs [steer, throttle].
+
+The state equations are given below:
+
+![alt text][image3]
+
+## Algorithm Overview
+
+There are four pieces to a self driving car - Perception, Localization, Path Planning and Control. The focus of this project is on control. It is assumed that the path planning algorithm would yield a desired set of way-points for the car to traverse. The MPC algorithm would project the vehicle's state in the future and minimize the error between the vehicle's trajectory and desired path. 
+
+The desired way-points from the path planning algorithm are in the global map co-ordinates. In order to calculate the cross track error as well as the orientation error, it is convenient to convert these way points to the car's co-ordinate system. The code below performs this transformation. 
+
+```
+for (int i=0;i<ptsx.size();i++) { // Transform way points from map coordinate to car coordinate system
+			
+	double shift_x = ptsx[i]-px; // translation move brings the point to car co-ordinates origin
+	double shift_y = ptsy[i]-py;
+
+	ptsx[i] = (shift_x*cos(0-psi) - shift_y*sin(0-psi)); // rotational move
+	ptsy[i] = (shift_x*sin(0-psi) + shift_y*cos(0-psi));  		  
+}
+
+```
+Once the way points are converted to the car's co-ordinate system, a 3rd order polynomial is fit to generalize the way-points. This polynomial would form the desired/reference trajectory that the MPC algorithm wants the car to follow. 
+
+The car's current states are received from the simulator. The car's current states along with the polynomial coefficients are passed to the MPC algorithm. The MPC algorithm projects the car's states into the future and calculates the desired steer and throttle actuation that minimizes the cross track and orientation errors. 
+
+The received commands from the MPC algorithm were fed into the simulator and verified to ensure the car runs smooth without veering off the desired path or outside the curb. 
+
+## MPC Algorithm
+
+The first step of the MPC algorithm was to define the horizon and time step over which the algorithm optimizes the error. 
+
+* The problem is solved in a receding horizon fashion. While the look ahead info helps in optimizing the actuator commands, too long of a horizon is not useful either. In real world, there is a fair bit of uncertainty in what comes ahead. The calculated actuations are applied for the current time step and the optimization is repeated from the new time step to the end of the horizon. 
+
+* The MPC algorithm essentially breaks down a continuous time problem into the N discrete steps and converts it into an optimization problem. N is given as time horizon (H) divided by time step (dt). The total states that the algorithm optimizes is number of states (6) * N + actuations at each time step. The longer the horizon, higher is the computational effort. 
+
+Taking into account the above two constraints, a prediction horizon of 1 second with a time step dt of 0.1 second worked well for the problem. 
+
+```
+size_t N = 10;
+double dt = 0.1;
+
+```
+The next step applies the constraints for the states and acutations. The differential equations described above provide the state constraints. The steer was limited to an absolute value of 25 degrees and the pedal was constrained between +1 and -1.
+
+```
+// The upper and lower limits of delta are set to -25 and 25
+// degrees (values in radians).Feel free to change this to something else.
+	
+for (int i = delta_start; i < a_start; i++) {
+vars_lowerbound[i] = -0.436332; // 25*pi/180
+vars_upperbound[i] = 0.436332;
+}
+
+// Acceleration/decceleration upper and lower limits.
+// NOTE: Feel free to change this to something else.
+for (int i = a_start; i < n_vars; i++) {
+vars_lowerbound[i] = -1.0; // full brake
+vars_upperbound[i] = 1.0; // full throttle
+}
+
+```
+Interior Point Optimizer (Ipopt - https://projects.coin-or.org/Ipopt) was used to solve the framed optimization problem. Ipopt is an open source software package for large scale non-linear optimization. Ipopt requires we give it the jacobians and hessians directly - it does not compute them for us. Hence, we need to either manually compute them or have a library do this for us. Luckily, there is a library called CppAD which does exactly this. By using CppAD we don't have to manually compute derivatives, which is tedious and prone to error.
+
+```
+// place to return solution
+CppAD::ipopt::solve_result<Dvector> solution;
+
+// solve the problem
+CppAD::ipopt::solve<Dvector, FG_eval>(
+  options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
+  constraints_upperbound, fg_eval, solution);
+
+```
+FG_eval contains the cost function and sets up the constraints in the desired fashion for Ipopt. The cost function used for the optimization is shown below. As seen, there are three parts to the cost function. The first part deals with error minimization. A velocity error term is introduced to ensure the car does not simply stop once the cross track and orientation errors are minimized. The second part of the cost function is to constrain excessive use of the actuators. The third part of the cost function is to constrain relative change in actuators. This minimizes abrupt changes in the actuator positions, especially the steer angle.  
+
+```
+// Reference State Cost
+
+	// The part of the cost based on the reference state.
+	for (int t = 0; t < N; t++) {
+	  fg[0] += 5*CppAD::pow(vars[cte_start + t]-cte_des, 2);
+	  fg[0] += 5*CppAD::pow(vars[epsi_start + t]-epsi_des, 2);
+	  fg[0] += 0.5*CppAD::pow(vars[v_start + t] - v_des, 2);
+	}
+
+	// Minimize the use of actuators.
+	for (int t = 0; t < N - 1; t++) {
+	  fg[0] += 50*CppAD::pow(vars[delta_start + t], 2);
+	  fg[0] += 50*CppAD::pow(vars[a_start + t], 2);
+	}
+
+	// Minimize the value gap between sequential actuations.
+	for (int t = 0; t < N - 2; t++) {
+	  fg[0] += 5000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+	  fg[0] += 100*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+	}
 
 
-## Call for IDE Profiles Pull Requests
+```
 
-Help your fellow students!
+The values shown above worked well for this project. 
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
+## Latency
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+In real world, there is always some latency in response time of actuators. One of the strong suites of the MPC algorithm is the fact that this latency can be seamlessly integrated into the control structure. In this case, a latency of 100 milliseconds is assumed. The states are estimated using the motion model over the next 100 milliseconds. This estimated state is then passed over to the MPC algorithm to calculate the optimized actuations at the next time step. The code below handles the actuator latency for this project. 
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+```
+//Before calculating delta and accel via MPC, predict states at latency dt		  
+// We are already in the car coordinate system.. x,y and psi are 0
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+double x_l=0+v*cos(0)*latency;
+double y_l=0+v*sin(0)*latency;
+double psi_l=0+(v/Lf)*(steer_rad)*latency;
+double v_l=v+accel*latency;
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+double epsi=0-atan(coeffs[1]); // psi - psi_des at current time step		  
+double cte_l=polyeval(coeffs,0)-0+v*sin(epsi)*latency;
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+double epsi_l=0-atan(coeffs[1])+(v/Lf)*(steer_rad)*latency;		  
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+Eigen::VectorXd state(6);
+state<<x_l,y_l,psi_l,v_l,cte_l,epsi_l;
+
+```
+## Closure
+
+A Model Predictive Controller was implemented on a self driving car for navigating around the Udacity provided test track. The gains were tuned in order to maximize speed across the track. The car top speed was around 45 mph. The car navigated very well within the test track without going off the curbs under all circumstances. Multiple laps yielded the same result thus verifying repeatability. 
+
+
+
+
+
 

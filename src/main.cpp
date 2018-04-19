@@ -326,7 +326,7 @@ int main() {
 					}
 				}
 				
-				if (lane_change_OK==true && car_speed<35 && car_speed>=30) {
+				if (lane_change_OK==true && car_speed<35 && car_speed>=30) { 
 					lane=lane_to_change;
 					cout<<"Changing lane to lane "<<lane<<endl;					
 					cout<<"Velocity Condition satisfied for lane change "<<car_speed<<endl;					
@@ -379,9 +379,9 @@ int main() {
 			}
 			
 			
-			vector<double> next_wp0=getXY(car_s+30,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
-			vector<double> next_wp1=getXY(car_s+60,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
-			vector<double> next_wp2=getXY(car_s+90,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
+			vector<double> next_wp0=getXY(car_s+40,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
+			vector<double> next_wp1=getXY(car_s+80,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
+			vector<double> next_wp2=getXY(car_s+120,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y); // vector of {x,y}
 			
 			
 			ptsx.push_back(next_wp0[0]);
