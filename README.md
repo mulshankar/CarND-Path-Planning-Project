@@ -11,9 +11,9 @@ Implement a path planning algorithm to enable a self driving car to navigate aro
 [image1]: ./Images/BehaviorPlannerOverview.png
 [image2]: ./Images/TrackOverview.PNG
 [image3]: ./Images/FrenetLaneChange.png
-[image4]: ./Images/Weights.PNG
-[image5]: ./Images/MeasurementPrediction.PNG
-[image6]: ./Images/UKFupdate1.PNG
+[image4]: ./Images/FinerPoints.png
+[image5]: ./Images/Capture2.PNG
+[image6]: ./Images/Capture.PNG
 [image7]: ./Images/NIS.PNG
 [image8]: ./Images/ChiSquare.PNG
 
@@ -79,91 +79,15 @@ for (int i=0;i<sensor_fusion.size();i++)
 
 * A simple calculation is then done based on current velocity, loop time and distance to compute the desired x,y coordinates.
 
-```
-// The upper and lower limits of delta are set to -25 and 25
-// degrees (values in radians).Feel free to change this to something else.
-	
-for (int i = delta_start; i < a_start; i++) {
-vars_lowerbound[i] = -0.436332; // 25*pi/180
-vars_upperbound[i] = 0.436332;
-}
+![alt text][image4]
 
-// Acceleration/decceleration upper and lower limits.
-// NOTE: Feel free to change this to something else.
-for (int i = a_start; i < n_vars; i++) {
-vars_lowerbound[i] = -1.0; // full brake
-vars_upperbound[i] = 1.0; // full throttle
-}
-
-```
-Interior Point Optimizer (Ipopt - https://projects.coin-or.org/Ipopt) was used to solve the framed optimization problem. Ipopt is an open source software package for large scale non-linear optimization. Ipopt requires we give it the jacobians and hessians directly - it does not compute them for us. Hence, we need to either manually compute them or have a library do this for us. Luckily, there is a library called CppAD which does exactly this. By using CppAD we don't have to manually compute derivatives, which is tedious and prone to error.
-
-```
-// place to return solution
-CppAD::ipopt::solve_result<Dvector> solution;
-
-// solve the problem
-CppAD::ipopt::solve<Dvector, FG_eval>(
-  options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
-  constraints_upperbound, fg_eval, solution);
-
-```
-FG_eval contains the cost function and sets up the constraints in the desired fashion for Ipopt. The cost function used for the optimization is shown below. As seen, there are three parts to the cost function. The first part deals with error minimization. A velocity error term is introduced to ensure the car does not simply stop once the cross track and orientation errors are minimized. The second part of the cost function is to constrain excessive use of the actuators. The third part of the cost function is to constrain relative change in actuators. This minimizes abrupt changes in the actuator positions, especially the steer angle.  
-
-```
-// Reference State Cost
-
-	// The part of the cost based on the reference state.
-	for (int t = 0; t < N; t++) {
-	  fg[0] += 5*CppAD::pow(vars[cte_start + t]-cte_des, 2);
-	  fg[0] += 5*CppAD::pow(vars[epsi_start + t]-epsi_des, 2);
-	  fg[0] += 0.5*CppAD::pow(vars[v_start + t] - v_des, 2);
-	}
-
-	// Minimize the use of actuators.
-	for (int t = 0; t < N - 1; t++) {
-	  fg[0] += 50*CppAD::pow(vars[delta_start + t], 2);
-	  fg[0] += 50*CppAD::pow(vars[a_start + t], 2);
-	}
-
-	// Minimize the value gap between sequential actuations.
-	for (int t = 0; t < N - 2; t++) {
-	  fg[0] += 5000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-	  fg[0] += 100*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
-	}
-
-
-```
-
-The values shown above worked well for this project. 
-
-## Latency
-
-In real world, there is always some latency in response time of actuators. One of the strong suites of the MPC algorithm is the fact that this latency can be seamlessly integrated into the control structure. In this case, a latency of 100 milliseconds is assumed. The states are estimated using the motion model over the next 100 milliseconds. This estimated state is then passed over to the MPC algorithm to calculate the optimized actuations at the next time step. The code below handles the actuator latency for this project. 
-
-```
-//Before calculating delta and accel via MPC, predict states at latency dt		  
-// We are already in the car coordinate system.. x,y and psi are 0
-
-double x_l=0+v*cos(0)*latency;
-double y_l=0+v*sin(0)*latency;
-double psi_l=0+(v/Lf)*(steer_rad)*latency;
-double v_l=v+accel*latency;
-
-double epsi=0-atan(coeffs[1]); // psi - psi_des at current time step		  
-double cte_l=polyeval(coeffs,0)-0+v*sin(epsi)*latency;
-
-double epsi_l=0-atan(coeffs[1])+(v/Lf)*(steer_rad)*latency;		  
-
-Eigen::VectorXd state(6);
-state<<x_l,y_l,psi_l,v_l,cte_l,epsi_l;
-
-```
 ## Closure
 
-A Model Predictive Controller was implemented on a self driving car for navigating around the Udacity provided test track. The gains were tuned in order to maximize speed across the track. The car top speed was around 45 mph. The car navigated very well within the test track without going off the curbs under all circumstances. Multiple laps yielded the same result thus verifying repeatability. 
+A trajectory planning algorithm was implemented on a self driving car for navigating around the Udacity provided test track. The car top speed was around 49.5 mph. The car navigated very well within the test track without going off the curbs under all circumstances. Multiple laps yielded the same result thus verifying repeatability. Shown below are results from a couple of test runs.
 
+![alt text][image5]
 
+![alt text][image6]
 
 
 
