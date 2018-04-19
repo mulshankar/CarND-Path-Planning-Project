@@ -19,7 +19,7 @@ Implement a path planning algorithm to enable a self driving car to navigate aro
 
 ## Trajectory Generation Overview
 
-The overall control architecture of a self-driving car is shown below. The key 4 elements - Perception, Localization, Control and Path-Planning. Individual modules of the behavior planner are highlighted within the blue box along with information flow. The focus of this project is on planning a trajectory for the car to traverse that is ideal in terms of speed, acceleration and jerk. The trajectory planner takes information from the localization module, prediction module and behavior planner modules. 
+The overall control architecture of a self-driving car is shown below. The key 4 elements - Perception, Localization, Control and Path-Planning. Individual modules of the behavior planner are highlighted within the blue box along with information flow. The focus of this project is on planning a trajectory for the car to traverse that is ideal in terms of speed, acceleration and jerk. The trajectory planner takes information from the localization module, prediction module and behavior planner modules and transfers its output to the motion control module. 
 
 ![alt text][image1]
 
@@ -35,7 +35,7 @@ Before diving into the algorithm, it is important to introduce the concept of Fr
 
 ![alt text][image3]
 
-While frenet coordinates are good for trajectory planning, the localization module still is in the global X,Y coordinates. Therefore, once the trajectory is planned in the frenet coordinate system, it is converted into XY coordinate system for the car's motion control module. The algorithm can be sub-sectioned into 2 parts - (1) First part decides on lane (2) Second part plans the trajectory for the desired lane
+While frenet coordinates are good for trajectory planning, the localization as well as motion control modules are in the global X,Y coordinates. Therefore, once the trajectory is planned in the frenet coordinate system, it is converted into XY coordinate system for the car's motion control module. The algorithm can be sub-sectioned into 2 parts - (1) First part decides on lane (2) Second part plans the trajectory for the desired lane
 
 * The car initially starts in lane 1 ( 0- left, 1 -middle and 2-right lanes)
 
@@ -67,17 +67,38 @@ for (int i=0;i<sensor_fusion.size();i++)
 ```
 * A simple switch case block decides on available options for lane changes
 
+```
+// decide on which lane you want to shift
+
+switch (lane) {			
+	case 0:
+		lane_to_change=1;
+		break;
+	case 1:
+		lane_to_change=0;
+		break;
+	case 2:
+		lane_to_change=1;
+		break;
+	default:
+		cout<<"problem in lane variable"<<endl;			
+}	
+
+```
+
 * If there is car ahead in the lane that is too close, the first step is to reduce speed and then explore if a lane change maneuver is safe to perform. The check uses sensor fusion information of cars in the "desired" lane. A velocity constraint was also added to minimize jerk or acceleration. For example, the car should not perform lane change at 50 mph. 
 
 * Once the lane is decided, the next step is to generate a safe trajectory for the car to traverse. While the trajectory is planned for a distance of 90 m, the base loop runs at 20 ms. The car probably travels for about the first few meters. The remaining points from the previous planned path is retained. 
 
-* A set of anchor points or way-points are generated at wide-spaced intervals (30 m in our case) in the frenet coordinate system. A helper functio getXY converts these way-points into the cartesian coordinate X,Y system
+* A set of anchor points or way-points are generated at wide-spaced intervals (30 m in our case) in the frenet coordinate system. A helper function 'getXY' converts these way-points into the cartesian coordinate X,Y system
 
 * These new way-points are now appended to the untraversed points of the previous planned trajectory. This ensures a smooth continuous path. 
 
 * The spline library was used to fit a polynomial through these points. Spline ensures the generated polynomial goes through every single way-point.
 
 * A simple calculation is then done based on current velocity, loop time and distance to compute the desired x,y coordinates.
+
+* The desired finer x,y coordinates are then transferred to the motion control module that executes the path by controlling pedal, brake and steer. 
 
 ![alt text][image4]
 
